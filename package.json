@@ -1,0 +1,25 @@
+{
+    "name": "reto-final-ecommerce",
+    "version": "1.0.0",
+    "description": "Este proyecto consiste en la realización del backend de un ecommerce utilizando NodeJs y express.",
+    "main": "index.js",
+    "scripts": {
+        "dev": "nodemon index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/MARIANO-89/reto-final-ecommerce.git"
+    },
+    "author": "Mariano García Mortigliengo",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/MARIANO-89/reto-final-ecommerce/issues"
+    },
+    "homepage": "https://github.com/MARIANO-89/reto-final-ecommerce#readme",
+    "dependencies": {
+        "express": "^4.17.1",
+        "nodemon": "^2.0.12",
+        "sequelize": "^6.6.5",
+        "sqlite3": "^5.0.2"
+    }
+}
