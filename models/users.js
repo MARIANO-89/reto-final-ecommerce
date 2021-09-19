@@ -23,6 +23,10 @@ const Users = sequelize.define(
             type: DataTypes.INTEGER,
             references: { model: Profiles, key: 'id' },
         },
+        name: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
     },
     {
         timestamps: false,

@@ -1,23 +1,95 @@
+require('dotenv').config();
 const express = require('express');
 const Users = require('./models/users');
+const jwt = require('jsonwebtoken');
 const app = express();
 const port = 3000;
+const ADMIN_ID = 1000;
 
-app.get('/register', async (req, res) => {
-    console.log(req);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-    res.send('Hola soy Resister');
+app.post('/register', async (req, res) => {
+    try {
+        const user = await Users.create({
+            profile: 1001,
+            email: req.body.email,
+            password: req.body.password,
+            name: req.body.name,
+        });
+
+        res.send({
+            user: {
+                email: user.getDataValue('email'),
+                profile: user.getDataValue('profile'),
+                id: user.getDataValue('id'),
+                name: user.getDataValue('name'),
+            },
+        });
+    } catch (error) {
+        res.status(500).send(error);
+    }
 });
 
-app.get('/login', async (req, res) => {
-    console.log(req);
-    const user = { email: 'nan_carp@hotmail.com', password: '12345' };
-    Users.findOne(user);
-    res.send(await Users.findOne(user));
+app.post('/users/:id', async (req, res) => {
+    try {
+        const userDecoded = jwt.verify(req.headers['x-access-token'], process.env.jwt_private_key);
+        if (req.body.id === userDecoded.id || userDecoded.profile === ADMIN_ID) {
+            const user = await Users.update(
+                {
+                    profile: req.body.profile,
+                    email: req.body.email,
+                    password: req.body.password,
+                    name: req.body.name,
+                },
+                { where: { id: req.params.id } }
+            );
+
+            res.send({
+                user: {
+                    id: req.params.id,
+                    profile: req.body.profile,
+                    email: req.body.email,
+                    password: req.body.password,
+                    name: req.body.name,
+                },
+            });
+        } else {
+            return res.status(403).send('Unauthorized');
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error);
+    }
+});
+
+app.post('/login', async (req, res) => {
+    try {
+        const users = await Users.findAll({
+            where: {
+                email: req.body.email,
+                password: req.body.password,
+            },
+        });
+
+        if (users.length > 0) {
+            const user = users[0];
+            const accessToken = jwt.sign(
+                { id: user.id, email: user.email, profile: user.profile, name: user.name },
+                process.env.jwt_private_key,
+                { expiresIn: '1h' }
+            );
+
+            res.send({ id: user.id, email: user.email, profile: user.profile, name: user.name, accessToken });
+        } else {
+            throw new Error('User or password is not exist');
+        }
+    } catch (error) {
+        res.status(500).send(error);
+    }
 });
 
 app.get('/', async (req, res) => {
-    console.log(await Users.findAll());
     const users = await Users.findAll();
     res.send(users);
 });
