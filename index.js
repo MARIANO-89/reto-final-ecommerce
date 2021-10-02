@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const Users = require('./models/users');
+const Products = require('./models/products');
 const jwt = require('jsonwebtoken');
 const app = express();
 const port = 3000;
@@ -58,7 +59,6 @@ app.post('/users/:id', async (req, res) => {
             return res.status(403).send('Unauthorized');
         }
     } catch (error) {
-        console.log(error);
         res.status(500).send(error);
     }
 });
@@ -84,6 +84,63 @@ app.post('/login', async (req, res) => {
         } else {
             throw new Error('User or password is not exist');
         }
+    } catch (error) {
+        res.status(500).send(error);
+    }
+});
+
+app.post('/products', async (req, res) => {
+    try {
+        const userDecoded = jwt.verify(req.headers['x-access-token'], process.env.jwt_private_key);
+
+        const newProduct = {
+            name: req.body.name,
+            description: req.body.description,
+            owner: userDecoded.id,
+            price: req.body.price,
+            created: Date.now(),
+        };
+
+        const response = await Products.create(newProduct);
+        console.log(response);
+        res.send({ ...newProduct, id: response.getDataValue('id') });
+    } catch (error) {
+        res.status(500).send(error);
+    }
+});
+
+app.put('/products/:product_id', async (req, res) => {
+    try {
+        jwt.verify(req.headers['x-access-token'], process.env.jwt_private_key);
+
+        const newProduct = {
+            name: req.body.name,
+            description: req.body.description,
+            price: req.body.price,
+        };
+
+        await Products.update(newProduct, { where: { id: req.params.product_id } });
+        res.send({ ...newProduct, id: req.params.product_id });
+    } catch (error) {
+        res.status(500).send(error);
+    }
+});
+
+app.delete('/products/:product_id', async (req, res) => {
+    try {
+        jwt.verify(req.headers['x-access-token'], process.env.jwt_private_key);
+
+        await Products.destroy({ where: { id: req.params.product_id } });
+        res.send({ id: req.params.product_id });
+    } catch (error) {
+        res.status(500).send(error);
+    }
+});
+
+app.get('/products', async (req, res) => {
+    try {
+        const products = await Products.findAll();
+        res.send(products);
     } catch (error) {
         res.status(500).send(error);
     }
