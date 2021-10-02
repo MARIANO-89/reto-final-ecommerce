@@ -3,6 +3,8 @@ const express = require('express');
 const Users = require('./models/users');
 const Products = require('./models/products');
 const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
+
 const app = express();
 const port = 3000;
 const ADMIN_ID = 1000;
@@ -139,7 +141,26 @@ app.delete('/products/:product_id', async (req, res) => {
 
 app.get('/products', async (req, res) => {
     try {
-        const products = await Products.findAll();
+        let query = {};
+        const { searchText, minPrice, maxPrice } = req.query;
+
+        if (searchText) {
+            const value = {
+                [Op.like]: '%' + searchText + '%',
+            };
+
+            const fields = ['name', 'description'];
+
+            query[Op.or] = {};
+            fields.forEach((item) => (query[Op.or][item] = value));
+        }
+
+        if (minPrice && maxPrice) {
+            query.price = { [Op.between]: [+minPrice, +maxPrice] };
+        }
+
+        const products = await Products.findAll({ where: query });
+
         res.send(products);
     } catch (error) {
         res.status(500).send(error);
