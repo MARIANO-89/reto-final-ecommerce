@@ -214,10 +214,62 @@ app.get('/sell', async (req, res) => {
         const userDecoded = jwt.verify(req.headers['x-access-token'], process.env.jwt_private_key);
 
         const sellDetails = await SellDetails.findAll({ where: { client: userDecoded.id } });
-        console.log(userDecoded);
-        jwt.verify(req.headers['x-access-token'], process.env.jwt_private_key);
+
         res.send(sellDetails);
     } catch (error) {
+        res.status(500).send(error);
+    }
+});
+
+app.get('/sell/:sell_id', async (req, res) => {
+    try {
+        jwt.verify(req.headers['x-access-token'], process.env.jwt_private_key);
+
+        const sellDetails = await SellProducts.findAll({ where: { sellDetails: req.params.sell_id } });
+
+        res.send(sellDetails);
+    } catch (error) {
+        res.status(500).send(error);
+    }
+});
+
+app.put('/sell/:sell_id', async (req, res) => {
+    try {
+        jwt.verify(req.headers['x-access-token'], process.env.jwt_private_key);
+
+        let total = 0;
+        req.body.products.forEach(function (item) {
+            total = total + item.price;
+        });
+        if (req.body.discount) {
+            total = total * (1 - req.body.discount / 100);
+        }
+
+        const newSell = {
+            description: req.body.description,
+            client: req.body.client,
+            total: total,
+            discount: req.body.discount,
+        };
+
+        await SellDetails.update(newSell, { where: { id: req.params.sell_id } });
+
+        await SellProducts.destroy({ where: { sellDetails: req.params.sell_id } });
+
+        for (let index = 0; index < req.body.products.length; index++) {
+            const product = req.body.products[index];
+
+            const data = {
+                product: product.id,
+                sellDetails: req.params.sell_id,
+            };
+
+            await SellProducts.create(data);
+        }
+
+        res.send({ sellId: req.params.sell_id });
+    } catch (error) {
+        console.log(error);
         res.status(500).send(error);
     }
 });
