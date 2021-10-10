@@ -4,7 +4,8 @@
     "description": "Este proyecto consiste en la realización del backend de un ecommerce utilizando NodeJs y express.",
     "main": "index.js",
     "scripts": {
-        "dev": "nodemon index.js"
+        "dev": "nodemon index.js",
+        "start": "node index.js"
     },
     "repository": {
         "type": "git",
