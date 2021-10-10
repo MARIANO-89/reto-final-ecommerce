@@ -142,7 +142,7 @@ app.delete('/products/:product_id', async (req, res) => {
 app.get('/products', async (req, res) => {
     try {
         let query = {};
-        const { searchText, minPrice, maxPrice } = req.query;
+        const { searchText, minPrice, maxPrice, owner } = req.query;
 
         if (searchText) {
             const value = {
@@ -157,6 +157,9 @@ app.get('/products', async (req, res) => {
 
         if (minPrice && maxPrice) {
             query.price = { [Op.between]: [+minPrice, +maxPrice] };
+        }
+        if (owner) {
+            query.owner = owner;
         }
 
         const products = await Products.findAll({ where: query });
