@@ -211,8 +211,11 @@ app.post('/sell', async (req, res) => {
 
 app.get('/sell', async (req, res) => {
     try {
+        const userDecoded = jwt.verify(req.headers['x-access-token'], process.env.jwt_private_key);
+
+        const sellDetails = await SellDetails.findAll({ where: { client: userDecoded.id } });
+        console.log(userDecoded);
         jwt.verify(req.headers['x-access-token'], process.env.jwt_private_key);
-        const sellDetails = await SellDetails.findAll();
         res.send(sellDetails);
     } catch (error) {
         res.status(500).send(error);
