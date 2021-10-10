@@ -4,7 +4,8 @@ const Users = require('./models/users');
 const Products = require('./models/products');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-
+const SellDetails = require('./models/sellDetails');
+const SellProducts = require('./models/sellProducts');
 const app = express();
 const port = 3000;
 const ADMIN_ID = 1000;
@@ -104,7 +105,6 @@ app.post('/products', async (req, res) => {
         };
 
         const response = await Products.create(newProduct);
-        console.log(response);
         res.send({ ...newProduct, id: response.getDataValue('id') });
     } catch (error) {
         res.status(500).send(error);
@@ -165,6 +165,55 @@ app.get('/products', async (req, res) => {
         const products = await Products.findAll({ where: query });
 
         res.send(products);
+    } catch (error) {
+        res.status(500).send(error);
+    }
+});
+
+app.post('/sell', async (req, res) => {
+    try {
+        jwt.verify(req.headers['x-access-token'], process.env.jwt_private_key);
+
+        let total = 0;
+        req.body.products.forEach(function (item) {
+            total = total + item.price;
+        });
+        if (req.body.discount) {
+            total = total * (1 - req.body.discount / 100);
+        }
+
+        const newSell = {
+            description: req.body.description,
+            client: req.body.client,
+            total: total,
+            discount: req.body.discount,
+            created: Date.now(),
+        };
+
+        const sellResponse = await SellDetails.create(newSell);
+
+        for (let index = 0; index < req.body.products.length; index++) {
+            const product = req.body.products[index];
+
+            const data = {
+                product: product.id,
+                sellDetails: sellResponse.getDataValue('id'),
+            };
+
+            await SellProducts.create(data);
+        }
+
+        res.send({ sellId: sellResponse.getDataValue('id') });
+    } catch (error) {
+        res.status(500).send(error);
+    }
+});
+
+app.get('/sell', async (req, res) => {
+    try {
+        jwt.verify(req.headers['x-access-token'], process.env.jwt_private_key);
+        const sellDetails = await SellDetails.findAll();
+        res.send(sellDetails);
     } catch (error) {
         res.status(500).send(error);
     }
